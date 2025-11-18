@@ -1,24 +1,52 @@
-import React, { useState } from 'react';
-import { Save, User, Mail, Shield } from 'lucide-react';
+
+import React, { useState, useEffect } from 'react';
+import { Save, User, Mail, Shield, Loader2, Check } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { supabase } from '../lib/supabase';
 
 const Settings = () => {
     const { user } = useAuth();
     const [isLoading, setIsLoading] = useState(false);
+    const [success, setSuccess] = useState(false);
     const [formData, setFormData] = useState({
-        username: user?.user_metadata?.username || '',
-        email: user?.email || '',
-        bio: 'Digital creator and tech enthusiast.'
+        username: '',
+        email: '',
+        bio: ''
     });
 
-    const handleSave = () => {
+    // Load user data when user object is available
+    useEffect(() => {
+        if (user) {
+            setFormData({
+                username: user.user_metadata?.username || '',
+                email: user.email || '',
+                bio: user.user_metadata?.bio || 'Digital creator and tech enthusiast.'
+            });
+        }
+    }, [user]);
+
+    const handleSave = async () => {
         setIsLoading(true);
-        // Simulate Supabase update
-        setTimeout(() => {
+        setSuccess(false);
+
+        try {
+            const { error } = await supabase.auth.updateUser({
+                data: { 
+                    username: formData.username,
+                    bio: formData.bio
+                }
+            });
+
+            if (error) throw error;
+
+            setSuccess(true);
+            setTimeout(() => setSuccess(false), 3000);
+        } catch (error) {
+            console.error('Error updating profile:', error);
+            alert('Failed to update profile.');
+        } finally {
             setIsLoading(false);
-            // In a real app: await supabase.auth.updateUser({...})
-            alert('Profile updated successfully!');
-        }, 1000);
+        }
     };
 
     return (
@@ -64,7 +92,7 @@ const Settings = () => {
                                     className="bg-transparent outline-none text-gray-400 w-full cursor-not-allowed"
                                 />
                             </div>
-                            <p className="text-xs text-gray-600">Email cannot be changed for this demo account.</p>
+                            <p className="text-xs text-gray-600">Email cannot be changed directly.</p>
                         </div>
                     </div>
 
@@ -81,9 +109,22 @@ const Settings = () => {
                     <div className="pt-4 flex justify-end">
                         <button 
                             onClick={handleSave}
-                            className="flex items-center gap-2 bg-violet-500 hover:bg-violet-600 text-white px-6 py-3 rounded-lg font-medium transition-all shadow-[0_0_15px_rgba(139,92,246,0.3)] active:scale-95"
+                            disabled={isLoading}
+                            className={`
+                                flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all active:scale-95
+                                ${success 
+                                    ? 'bg-green-500/10 text-green-500 border border-green-500/20' 
+                                    : 'bg-violet-500 hover:bg-violet-600 text-white shadow-[0_0_15px_rgba(139,92,246,0.3)]'}
+                            `}
                         >
-                            {isLoading ? 'Saving...' : (
+                            {isLoading ? (
+                                <Loader2 size={18} className="animate-spin" />
+                            ) : success ? (
+                                <>
+                                    <Check size={18} />
+                                    Saved!
+                                </>
+                            ) : (
                                 <>
                                     <Save size={18} />
                                     Save Changes
@@ -99,7 +140,7 @@ const Settings = () => {
                     <Shield className="text-gray-500" />
                     Security
                 </h2>
-                <p className="text-gray-500">Security settings are disabled for this demo.</p>
+                <p className="text-gray-500">Password and security settings are managed via your email provider for this account type.</p>
             </div>
         </div>
     );

@@ -1,17 +1,18 @@
+
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { supabase } from '../lib/supabase';
 
 interface AuthContextType {
   user: any | null;
   loading: boolean;
-  signIn: (email: string) => Promise<void>;
+  signIn: (email: string, username?: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
-  signIn: async () => {},
+  signIn: async () => ({ error: null }),
   signOut: async () => {},
 });
 
@@ -20,13 +21,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!isSupabaseConfigured()) {
-      // Demo mode: simulate a logged in user after a short delay if requested, 
-      // or just start as null. For this demo, we'll start null.
-      setLoading(false);
-      return;
-    }
-
     // Check active sessions and subscribe to changes
     const getSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -38,26 +32,35 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
+      setLoading(false);
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
-  const signIn = async (email: string) => {
-    if (!isSupabaseConfigured()) {
-        // Mock login for demo
-        setUser({ id: 'demo-user', email, user_metadata: { username: 'house' } });
-        return;
+  const signIn = async (email: string, username?: string) => {
+    try {
+        // We pass the username in options so it's saved to metadata on signup
+        const options: any = {
+            emailRedirectTo: window.location.origin + '/dashboard/overview',
+        };
+
+        if (username) {
+            options.data = { username };
+        }
+
+        const { error } = await supabase.auth.signInWithOtp({
+            email,
+            options
+        });
+        
+        return { error };
+    } catch (error) {
+        return { error };
     }
-    // In a real app, handle OTP or password login here
-    await supabase.auth.signInWithOtp({ email });
   };
 
   const signOut = async () => {
-    if (!isSupabaseConfigured()) {
-        setUser(null);
-        return;
-    }
     await supabase.auth.signOut();
   };
 
