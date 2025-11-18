@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { motion, Variants } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { Eye, Users, Loader2, Box, Mail, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { Loader2, Box, Mail, ArrowRight, CheckCircle2, LogIn } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const LandingPage = () => {
@@ -15,6 +15,15 @@ const LandingPage = () => {
   const handleClaimClick = async () => {
     if (!username) return;
     setStep('email');
+  };
+
+  const handleLoginClick = () => {
+      // Skip username step if just logging in
+      setStep('email');
+      const input = document.getElementById('email-input');
+      if (input) input.focus();
+      // Smooth scroll to input
+      window.scrollTo({ top: 300, behavior: 'smooth' });
   };
 
   const handleEmailSubmit = async () => {
@@ -67,12 +76,22 @@ const LandingPage = () => {
             </div>
             <div className="flex items-center gap-4">
                 <button className="px-4 py-2 text-sm font-medium text-gray-300 hover:text-white transition-colors">Shop</button>
-                <Link 
-                    to={user ? "/dashboard/overview" : "/"}
-                    className="px-5 py-2 text-sm font-medium bg-violet-500 hover:bg-violet-400 text-white rounded-full transition-all shadow-[0_0_20px_rgba(139,92,246,0.4)]"
-                >
-                    {user ? "Dashboard" : "Login"}
-                </Link>
+                {user ? (
+                    <Link 
+                        to="/dashboard/overview"
+                        className="px-5 py-2 text-sm font-medium bg-violet-500 hover:bg-violet-400 text-white rounded-full transition-all shadow-[0_0_20px_rgba(139,92,246,0.4)]"
+                    >
+                        Dashboard
+                    </Link>
+                ) : (
+                     <button 
+                        onClick={handleLoginClick}
+                        className="px-5 py-2 text-sm font-medium text-white hover:text-violet-300 transition-colors flex items-center gap-2"
+                    >
+                        <LogIn size={16} />
+                        Login
+                    </button>
+                )}
             </div>
         </motion.nav>
 
@@ -146,8 +165,9 @@ const LandingPage = () => {
                                         <div className="relative flex items-center bg-[#0f0f0f] border border-[#262626] rounded-full px-6 py-3 w-full sm:w-96 shadow-2xl">
                                             <Mail size={18} className="text-gray-500 mr-3" />
                                             <input 
+                                                id="email-input"
                                                 type="email" 
-                                                placeholder="Enter your email to claim"
+                                                placeholder={username ? "Enter email to claim" : "Enter your email to login"}
                                                 className="bg-transparent border-none outline-none text-white placeholder-gray-600 w-full font-medium"
                                                 value={email}
                                                 onChange={(e) => setEmail(e.target.value)}
@@ -169,35 +189,11 @@ const LandingPage = () => {
                         </div>
                     )}
                     
-                    {step === 'username' && (
-                        <div className="mt-4 text-sm text-gray-500">
-                            Claim your username before someone else does
-                        </div>
-                    )}
+                    <div className="mt-6 text-sm text-gray-500">
+                        {step === 'username' && "Claim your username before someone else does."}
+                        {step === 'email' && (username ? "Almost there! Enter your email to secure this handle." : "Welcome back. Enter your email to receive a login link.")}
+                    </div>
                 </motion.div>
-            </motion.div>
-
-            {/* Bottom Stats */}
-            <motion.div 
-                initial={{ opacity: 0, y: 50 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 1, duration: 0.8 }}
-                className="absolute bottom-10 left-0 right-0 flex justify-center gap-6 px-4 flex-wrap pointer-events-none"
-            >
-                <div className="bg-[#0a0a0a]/80 backdrop-blur-md border border-[#262626] rounded-2xl p-4 w-48 flex flex-col items-center gap-1">
-                    <span className="text-3xl font-bold text-white">0</span>
-                    <div className="flex items-center gap-2 text-gray-400 text-sm">
-                        <Eye size={14} />
-                        <span>Profile Views</span>
-                    </div>
-                </div>
-                <div className="bg-[#0a0a0a]/80 backdrop-blur-md border border-[#262626] rounded-2xl p-4 w-48 flex flex-col items-center gap-1">
-                    <span className="text-3xl font-bold text-white">14</span>
-                    <div className="flex items-center gap-2 text-gray-400 text-sm">
-                        <Users size={14} />
-                        <span>Users</span>
-                    </div>
-                </div>
             </motion.div>
         </div>
     </div>

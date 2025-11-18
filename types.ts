@@ -1,3 +1,4 @@
+
 import { LucideIcon } from 'lucide-react';
 
 export interface SubMenuItem {
@@ -21,4 +22,26 @@ export interface StatCardProps {
   icon: LucideIcon;
   subValue?: string;
   variant?: 'default' | 'pink';
+}
+
+export interface ThemeConfig {
+  layout: 'standard' | 'expanded' | 'minimal';
+  font: 'Inter' | 'Roboto' | 'Playfair Display' | 'Courier Prime';
+  primaryColor: string;
+  backgroundColor: string;
+  cardStyle: 'rounded-xl' | 'rounded-none' | 'rounded-3xl' | 'border-only';
+  cardOpacity: number;
+  backgroundEffect: 'none' | 'dots' | 'scanlines' | 'vignette';
+}
+
+export interface UserProfile {
+  id: string;
+  username: string;
+  full_name?: string;
+  bio?: string;
+  avatar_url?: string;
+  background_url?: string;
+  cursor_url?: string;
+  theme_config: ThemeConfig;
+  social_links?: any[];
 }

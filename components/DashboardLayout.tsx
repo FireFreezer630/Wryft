@@ -1,9 +1,11 @@
+
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import { useAuth } from '../context/AuthContext';
 import Dashboard from './Dashboard';
 import Settings from './Settings';
+import Customization from './Customization';
 
 // Placeholder for empty dashboard pages
 const PlaceholderPage = ({ title }: { title: string }) => (
@@ -29,10 +31,10 @@ const DashboardLayout = () => {
              <Route index element={<Navigate to="overview" replace />} />
              <Route path="overview" element={<Dashboard />} />
              <Route path="settings" element={<Settings />} />
+             <Route path="customize" element={<Customization />} />
              
              {/* Placeholders for other menu items */}
              <Route path="ai" element={<PlaceholderPage title="AI Assistant" />} />
-             <Route path="customize" element={<PlaceholderPage title="Customization" />} />
              <Route path="layout" element={<PlaceholderPage title="Layout Editor" />} />
              <Route path="decoration" element={<PlaceholderPage title="Decorations" />} />
              <Route path="premium" element={<PlaceholderPage title="Premium Features" />} />
