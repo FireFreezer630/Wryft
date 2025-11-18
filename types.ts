@@ -27,11 +27,37 @@ export interface StatCardProps {
 export interface ThemeConfig {
   layout: 'standard' | 'expanded' | 'minimal';
   font: 'Inter' | 'Roboto' | 'Playfair Display' | 'Courier Prime';
-  primaryColor: string;
-  backgroundColor: string;
   cardStyle: 'rounded-xl' | 'rounded-none' | 'rounded-3xl' | 'border-only';
-  cardOpacity: number;
-  backgroundEffect: 'none' | 'dots' | 'scanlines' | 'vignette' | 'snow' | 'rain';
+  backgroundEffect: 'none' | 'dots' | 'scanlines' | 'vignette' | 'snow' | 'rain' | 'confetti';
+  usernameEffect: 'none' | 'sparkle' | 'glitch' | 'rainbow';
+  
+  // Advanced Customization
+  opacity: number; // 0 to 100
+  blur: number; // 0 to 20px
+  borderRadius: string; // CSS value
+  enterText: string;
+  
+  // Colors
+  colors: {
+    accent: string;
+    text: string;
+    secondaryText: string;
+    background: string;
+    cardBackground: string;
+    gradientEnabled: boolean;
+  };
+  
+  // About Me
+  aboutMeEnabled: boolean;
+
+  // Time Settings
+  time: {
+    showJoinDate: boolean;
+    timezone: string;
+    format: '12h' | '24h';
+    displayMode: 'absolute' | 'relative';
+    schema: string;
+  };
 }
 
 export interface ContentItem {
@@ -47,6 +73,7 @@ export interface SocialLink {
   platform: string;
   url: string;
   isActive: boolean;
+  icon?: string; 
 }
 
 export interface UserProfile {
@@ -54,10 +81,16 @@ export interface UserProfile {
   username: string;
   full_name?: string;
   bio?: string;
+  about_me?: string;
+  location?: string;
   avatar_url?: string;
   background_url?: string;
   cursor_url?: string;
+  audio_url?: string;
+  youtube_url?: string;
   theme_config: ThemeConfig;
   social_links?: SocialLink[];
   content?: ContentItem[];
+  view_count?: number;
+  join_date?: string;
 }
