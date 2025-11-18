@@ -52,31 +52,46 @@ const PublicProfile = () => {
 
     useEffect(() => {
         const fetchProfile = async () => {
-            if (!username) return;
-            setLoading(true);
-            
-            // 1. Fetch Profile by Username
-            const { data: profiles, error } = await supabase
-                .from('profiles')
-                .select('*')
-                .eq('username', username.toLowerCase())
-                .limit(1);
-
-            if (error || !profiles || profiles.length === 0) {
+            if (!username) {
                 setNotFound(true);
                 setLoading(false);
                 return;
             }
+            
+            setLoading(true);
+            
+            try {
+                // 1. Fetch Profile by Username
+                const { data: profiles, error } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('username', username.toLowerCase())
+                    .limit(1);
 
-            const userData = profiles[0];
-            setProfile({
-                ...userData,
-                theme_config: { ...DEFAULT_THEME, ...userData.theme_config }
-            });
-            setLoading(false);
+                if (error || !profiles || profiles.length === 0) {
+                    console.log('Profile not found or error:', error);
+                    setNotFound(true);
+                    setLoading(false);
+                    return;
+                }
 
-            // 2. Increment View Count (Fire & Forget)
-            await supabase.rpc('increment_view_count', { user_id: userData.id });
+                const userData = profiles[0];
+                setProfile({
+                    ...userData,
+                    theme_config: { ...DEFAULT_THEME, ...userData.theme_config }
+                });
+                setLoading(false);
+
+                // 2. Increment View Count (Fire & Forget)
+                // Ignoring errors here to not block render
+                supabase.rpc('increment_view_count', { user_id: userData.id }).then(({ error }) => {
+                    if (error) console.warn('Failed to increment views:', error);
+                });
+            } catch (e) {
+                console.error('Unexpected error fetching profile:', e);
+                setNotFound(true);
+                setLoading(false);
+            }
         };
 
         fetchProfile();
@@ -92,6 +107,7 @@ const PublicProfile = () => {
         <div className="min-h-screen bg-[#050505] flex flex-col items-center justify-center text-white gap-4">
             <h1 className="text-4xl font-bold">404</h1>
             <p className="text-gray-500">User not found.</p>
+            <a href="/" className="text-violet-500 hover:underline mt-4">Return Home</a>
         </div>
     );
 

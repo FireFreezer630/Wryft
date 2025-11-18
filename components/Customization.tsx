@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useRef } from 'react';
 import { 
     User, 
@@ -242,6 +241,13 @@ const Customization = () => {
                     time: { ...DEFAULT_THEME.time, ...data.theme_config?.time }
                 };
                 setProfile({ ...data, theme_config: mergedTheme });
+            } else {
+                // Initialize if no profile found
+                setProfile({
+                    id: user.id,
+                    username: user.user_metadata?.username || 'user',
+                    theme_config: DEFAULT_THEME
+                });
             }
             setLoading(false);
         };
@@ -249,22 +255,26 @@ const Customization = () => {
     }, [user]);
 
     const updateProfile = (key: keyof UserProfile, value: any) => {
-        if (!profile) return;
-        setProfile({ ...profile, [key]: value });
+        setProfile(prev => prev ? { ...prev, [key]: value } : null);
     };
 
     const updateTheme = (path: string, value: any) => {
-        if (!profile) return;
-        const newTheme = { ...profile.theme_config };
-        const parts = path.split('.');
-        
-        if (parts.length === 1) {
-            (newTheme as any)[parts[0]] = value;
-        } else if (parts.length === 2) {
-            (newTheme as any)[parts[0]][parts[1]] = value;
-        }
-        
-        setProfile({ ...profile, theme_config: newTheme });
+        setProfile(prev => {
+            if (!prev) return null;
+            
+            // Deep Clone to ensure reactivity
+            const newTheme = JSON.parse(JSON.stringify(prev.theme_config));
+            const parts = path.split('.');
+            
+            if (parts.length === 1) {
+                newTheme[parts[0]] = value;
+            } else if (parts.length === 2) {
+                if (!newTheme[parts[0]]) newTheme[parts[0]] = {};
+                newTheme[parts[0]][parts[1]] = value;
+            }
+            
+            return { ...prev, theme_config: newTheme };
+        });
     };
 
     const handleUpload = async (file: File, type: 'avatar_url' | 'background_url') => {
