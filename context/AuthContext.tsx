@@ -40,13 +40,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signIn = async (email: string, username?: string) => {
     try {
-        // Determine the redirect URL
-        let redirectUrl = window.location.origin + '/dashboard/overview';
+        // Determine the redirect URL based on environment
+        const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
         
-        // If hosted on Netlify, explicitly set the domain to ensure magic links work
-        if (window.location.hostname.includes('netlify.app')) {
-            redirectUrl = `https://${window.location.hostname}/dashboard/overview`;
-        }
+        // Use strictly https://wryft.xyz for production to ensure email links open in the correct app
+        const origin = isLocal ? window.location.origin : 'https://wryft.xyz';
+        
+        const redirectUrl = `${origin}/dashboard/overview`;
 
         const options: any = {
             emailRedirectTo: redirectUrl,

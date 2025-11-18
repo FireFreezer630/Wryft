@@ -150,8 +150,6 @@ const Settings = () => {
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0] && editingField) {
             // If it's a cursor, we skip cropping (cursors are often specific sizes/types)
-            // Actually, let's allow standard image crop if they upload an image for cursor
-            // But .cur files won't work in canvas editor easily.
             const file = e.target.files[0];
 
             if (editingField === 'cursor_url' && !file.type.startsWith('image/')) {
@@ -221,11 +219,13 @@ const Settings = () => {
     };
 
     const handleSave = async () => {
+        if (!user) return;
         setIsLoading(true);
         setSuccess(false);
 
         try {
-            const { error } = await supabase.auth.updateUser({
+            // 1. Update Supabase Auth Metadata (for Sidebar and Session)
+            const { error: authError } = await supabase.auth.updateUser({
                 data: { 
                     username: formData.username,
                     bio: formData.bio,
@@ -235,7 +235,22 @@ const Settings = () => {
                 }
             });
 
-            if (error) throw error;
+            if (authError) throw authError;
+
+            // 2. Update Public Profiles Table (for Public Page)
+            const { error: dbError } = await supabase
+                .from('profiles')
+                .update({
+                    username: formData.username,
+                    bio: formData.bio,
+                    avatar_url: formData.avatar_url,
+                    background_url: formData.background_url,
+                    cursor_url: formData.cursor_url,
+                    updated_at: new Date()
+                })
+                .eq('id', user.id);
+
+            if (dbError) throw dbError;
 
             setSuccess(true);
             setTimeout(() => setSuccess(false), 3000);

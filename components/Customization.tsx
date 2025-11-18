@@ -334,22 +334,39 @@ const Customization = () => {
         if (!user || !profile) return;
         setSaving(true);
         
-        const { error } = await supabase
-            .from('profiles')
-            .update({
-                about_me: profile.about_me,
-                location: profile.location,
-                youtube_url: profile.youtube_url,
-                avatar_url: profile.avatar_url,
-                background_url: profile.background_url,
-                theme_config: profile.theme_config,
-                bio: profile.bio,
-                updated_at: new Date()
-            })
-            .eq('id', user.id);
+        try {
+            // 1. Update Profile Table (For Public Page)
+            const { error } = await supabase
+                .from('profiles')
+                .update({
+                    about_me: profile.about_me,
+                    location: profile.location,
+                    youtube_url: profile.youtube_url,
+                    avatar_url: profile.avatar_url,
+                    background_url: profile.background_url,
+                    theme_config: profile.theme_config,
+                    bio: profile.bio,
+                    updated_at: new Date()
+                })
+                .eq('id', user.id);
 
-        setSaving(false);
-        if (error) alert('Failed to save');
+            if (error) throw error;
+
+            // 2. Update Auth User Metadata (For Sidebar persistence)
+            await supabase.auth.updateUser({
+                data: {
+                    avatar_url: profile.avatar_url,
+                    background_url: profile.background_url,
+                    bio: profile.bio
+                }
+            });
+
+        } catch (error) {
+            console.error("Failed to save:", error);
+            alert('Failed to save changes. Please try again.');
+        } finally {
+            setSaving(false);
+        }
     };
 
     if (authLoading || loading) return <div className="flex justify-center p-20"><Loader2 className="animate-spin text-violet-500" size={32} /></div>;
