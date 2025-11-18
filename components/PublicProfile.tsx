@@ -117,7 +117,7 @@ const PublicProfile = () => {
                      if (mergedTheme.audio.settings.shuffle) {
                          setCurrentTrackIndex(Math.floor(Math.random() * mergedTheme.audio.files.length));
                      } else if (mergedTheme.audio.activeFileId) {
-                         const idx = mergedTheme.audio.files.findIndex(f => f.id === mergedTheme.audio.activeFileId);
+                         const idx = mergedTheme.audio.files.findIndex((f: any) => f.id === mergedTheme.audio.activeFileId);
                          if (idx !== -1) setCurrentTrackIndex(idx);
                      }
                 }
