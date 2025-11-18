@@ -1,0 +1,5 @@
+{
+  "name": "Haunt.gg Dashboard Clone",
+  "description": "A pixel-perfect React recreation of the Haunt.gg analytics dashboard featuring a dark aesthetic, responsive sidebar with smooth animations, and interactive data visualization using Tailwind CSS and Recharts.",
+  "requestFramePermissions": []
+}
