@@ -100,7 +100,7 @@ const PublicProfile = () => {
                 const userData = profiles[0];
                 
                 // Deep merge default theme with loaded theme to prevent crashes on missing new fields
-                const mergedTheme = {
+                const mergedTheme: ThemeConfig = {
                     ...DEFAULT_THEME,
                     ...userData.theme_config,
                     audio: { ...DEFAULT_THEME.audio, ...userData.theme_config?.audio },
