@@ -17,7 +17,7 @@ import {
   Box,
   ExternalLink,
   LayoutGrid,
-  CircleHelp,
+  HelpCircle,
   Users,
   Power
 } from 'lucide-react';
@@ -183,7 +183,7 @@ const Sidebar = () => {
       {/* Bottom Actions */}
       <div className="p-4 border-t border-wryft-border bg-[#0a0a0a]">
         <div className="grid grid-cols-4 gap-2 mb-4">
-            {[ExternalLink, LayoutGrid, CircleHelp, Users].map((Icon, i) => (
+            {[ExternalLink, LayoutGrid, HelpCircle, Users].map((Icon, i) => (
                 <button 
                     key={i}
                     className={`
