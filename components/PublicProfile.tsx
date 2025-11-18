@@ -1,9 +1,9 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { UserProfile, ThemeConfig } from '../types';
-import { Loader2, MapPin, Briefcase, Eye, Globe, Twitter, Instagram, Github, Youtube, Twitch, Facebook, Linkedin } from 'lucide-react';
+import { Loader2, MapPin, Briefcase, Eye, Globe, Twitter, Instagram, Github, Youtube, Twitch, Facebook, Linkedin, Music, Play, Pause, SkipForward, Volume2, VolumeX } from 'lucide-react';
 
 const DEFAULT_THEME: ThemeConfig = {
     layout: 'standard',
@@ -65,6 +65,12 @@ const PublicProfile = () => {
     const [profile, setProfile] = useState<UserProfile | null>(null);
     const [loading, setLoading] = useState(true);
     const [notFound, setNotFound] = useState(false);
+    
+    // Audio State
+    const [isPlaying, setIsPlaying] = useState(false);
+    const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
+    const [isMuted, setIsMuted] = useState(false);
+    const audioRef = useRef<HTMLAudioElement | null>(null);
 
     useEffect(() => {
         const fetchProfile = async () => {
@@ -105,6 +111,17 @@ const PublicProfile = () => {
                     ...userData,
                     theme_config: mergedTheme
                 });
+
+                // Initialize audio index if random
+                if (mergedTheme.audio?.enabled && mergedTheme.audio.files.length > 0) {
+                     if (mergedTheme.audio.settings.shuffle) {
+                         setCurrentTrackIndex(Math.floor(Math.random() * mergedTheme.audio.files.length));
+                     } else if (mergedTheme.audio.activeFileId) {
+                         const idx = mergedTheme.audio.files.findIndex(f => f.id === mergedTheme.audio.activeFileId);
+                         if (idx !== -1) setCurrentTrackIndex(idx);
+                     }
+                }
+
                 setLoading(false);
 
                 // 2. Increment View Count (Fire & Forget)
@@ -120,6 +137,49 @@ const PublicProfile = () => {
 
         fetchProfile();
     }, [username]);
+
+    // Handle Audio Playback
+    useEffect(() => {
+        if (profile?.theme_config?.audio?.enabled && audioRef.current) {
+            const files = profile.theme_config.audio.files;
+            if (files.length > 0) {
+                audioRef.current.src = files[currentTrackIndex].url;
+                if (isPlaying) {
+                    audioRef.current.play().catch(e => console.log("Autoplay prevented:", e));
+                }
+            }
+        }
+    }, [currentTrackIndex, profile]);
+
+    const togglePlay = () => {
+        if (!audioRef.current) return;
+        if (isPlaying) {
+            audioRef.current.pause();
+        } else {
+            audioRef.current.play();
+        }
+        setIsPlaying(!isPlaying);
+    };
+
+    const nextTrack = () => {
+        if (!profile?.theme_config?.audio?.files) return;
+        const files = profile.theme_config.audio.files;
+        let nextIndex = currentTrackIndex + 1;
+        if (profile.theme_config.audio.settings.shuffle) {
+             nextIndex = Math.floor(Math.random() * files.length);
+        } else if (nextIndex >= files.length) {
+            nextIndex = 0;
+        }
+        setCurrentTrackIndex(nextIndex);
+        setIsPlaying(true); // Ensure it plays when manually skipped
+    };
+
+    const toggleMute = () => {
+        if (audioRef.current) {
+            audioRef.current.muted = !isMuted;
+            setIsMuted(!isMuted);
+        }
+    };
 
     if (loading) return (
         <div className="min-h-screen bg-[#050505] flex items-center justify-center">
@@ -152,6 +212,8 @@ const PublicProfile = () => {
     // Convert opacity (0-100) to hex alpha
     const cardAlpha = Math.floor((theme_config.opacity / 100) * 255).toString(16).padStart(2, '0');
     const cardBgColor = `${theme_config.colors.cardBackground}${cardAlpha}`;
+
+    const activeAudioFile = theme_config.audio.files[currentTrackIndex];
     
     return (
         <div className="min-h-screen w-full relative overflow-hidden flex items-center justify-center p-4" style={bgStyle}>
@@ -162,6 +224,51 @@ const PublicProfile = () => {
             {theme_config.backgroundEffect === 'snow' && (
                 <div className="absolute inset-0 pointer-events-none snow-container">
                     {[...Array(50)].map((_, i) => <div key={i} className="snow" style={{ left: `${Math.random() * 100}%`, animationDelay: `${Math.random() * 5}s` }}></div>)}
+                </div>
+            )}
+            {theme_config.backgroundEffect === 'rain' && (
+                 <div className="absolute inset-0 pointer-events-none rain-container bg-blue-900/5">
+                     {[...Array(50)].map((_, i) => (
+                        <div key={i} className="rain" style={{ left: `${Math.random() * 100}%`, animationDelay: `${Math.random() * 2}s` }}></div>
+                    ))}
+                </div>
+            )}
+
+            {/* Audio Player Widget */}
+            {theme_config.audio.enabled && theme_config.audio.files.length > 0 && (
+                <div className={`
+                    fixed z-50 flex items-center gap-3 p-2 rounded-full backdrop-blur-md border border-white/10 shadow-lg transition-all
+                    ${theme_config.audio.settings.sticky ? 'bottom-6 right-6' : 'top-6 right-6'}
+                    ${theme_config.audio.settings.player ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'}
+                `} style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}>
+                    <audio 
+                        ref={audioRef} 
+                        onEnded={nextTrack}
+                        loop={theme_config.audio.files.length === 1}
+                    />
+                    
+                    <div className="w-8 h-8 rounded-full bg-violet-500/20 flex items-center justify-center animate-spin-slow">
+                        <Music size={14} className="text-violet-400" />
+                    </div>
+
+                    <div className="flex flex-col max-w-[100px]">
+                        <span className="text-[10px] font-bold text-white truncate">{activeAudioFile?.name || 'Unknown'}</span>
+                        <span className="text-[9px] text-gray-400">Now Playing</span>
+                    </div>
+
+                    <div className="flex items-center gap-1 border-l border-white/10 pl-2">
+                        <button onClick={togglePlay} className="p-1.5 hover:bg-white/10 rounded-full text-white transition-colors">
+                            {isPlaying ? <Pause size={14} /> : <Play size={14} />}
+                        </button>
+                        <button onClick={nextTrack} className="p-1.5 hover:bg-white/10 rounded-full text-white transition-colors">
+                            <SkipForward size={14} />
+                        </button>
+                         {theme_config.audio.settings.volume && (
+                            <button onClick={toggleMute} className="p-1.5 hover:bg-white/10 rounded-full text-gray-400 hover:text-white transition-colors">
+                                {isMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
+                            </button>
+                        )}
+                    </div>
                 </div>
             )}
 
@@ -191,7 +298,10 @@ const PublicProfile = () => {
                 {/* Right: Info */}
                 <div className="flex-1 flex flex-col text-center md:text-left">
                     <div className="flex flex-col md:flex-row md:items-center gap-3 mb-2">
-                        <h1 className="text-3xl font-bold" style={{ color: theme_config.colors.text }}>
+                         <h1 className={`text-3xl font-bold ${theme_config.usernameEffect === 'glitch' ? 'animate-pulse' : ''}`} style={{ 
+                             color: theme_config.colors.text,
+                             textShadow: theme_config.usernameEffect === 'sparkle' ? '0 0 10px currentColor' : 'none'
+                        }}>
                             {profile.username}
                         </h1>
                         {/* Badges (Mock) */}
@@ -216,11 +326,18 @@ const PublicProfile = () => {
                             <Eye size={12} />
                             {profile.view_count || 0} views
                         </div>
+                        {theme_config.time.showJoinDate && profile.join_date && (
+                             <div className="flex items-center gap-1">
+                                {new Date(profile.join_date).toLocaleDateString()}
+                            </div>
+                        )}
                     </div>
 
-                    <p className="text-sm mb-6 leading-relaxed max-w-lg mx-auto md:mx-0" style={{ color: theme_config.colors.secondaryText }}>
-                        {profile.bio || "No bio yet."}
-                    </p>
+                    {theme_config.aboutMeEnabled && (
+                        <p className="text-sm mb-6 leading-relaxed max-w-lg mx-auto md:mx-0 whitespace-pre-wrap" style={{ color: theme_config.colors.secondaryText }}>
+                            {profile.about_me || profile.bio || "No bio yet."}
+                        </p>
+                    )}
 
                     {/* Social Icons */}
                     <div className="flex gap-4 justify-center md:justify-start mb-8">
