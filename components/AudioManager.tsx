@@ -45,8 +45,9 @@ const AudioManager: React.FC<AudioManagerProps> = ({ config, onUpdate, onClose }
             onUpdate({
                 ...config,
                 files: [...config.files, newFile],
-                // Auto select if first file
-                activeFileId: config.files.length === 0 ? newFile.id : config.activeFileId
+                // Auto select if first file and enable
+                activeFileId: config.files.length === 0 ? newFile.id : config.activeFileId,
+                enabled: true
             });
 
         } catch (error) {
@@ -94,7 +95,7 @@ const AudioManager: React.FC<AudioManagerProps> = ({ config, onUpdate, onClose }
     };
 
     const setActive = (id: string) => {
-        onUpdate({ ...config, activeFileId: id });
+        onUpdate({ ...config, activeFileId: id, enabled: true });
     };
 
     return (

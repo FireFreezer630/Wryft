@@ -2,7 +2,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { UserProfile, ThemeConfig } from '../types';
+import { UserProfile, ThemeConfig, AudioItem } from '../types';
 import { Loader2, MapPin, Briefcase, Eye, Globe, Twitter, Instagram, Github, Youtube, Twitch, Facebook, Linkedin, Music, Play, Pause, SkipForward, Volume2, VolumeX } from 'lucide-react';
 
 const DEFAULT_THEME: ThemeConfig = {
@@ -103,6 +103,8 @@ const PublicProfile = () => {
                 const mergedTheme: ThemeConfig = {
                     ...DEFAULT_THEME,
                     ...userData.theme_config,
+                    colors: { ...DEFAULT_THEME.colors, ...userData.theme_config?.colors },
+                    time: { ...DEFAULT_THEME.time, ...userData.theme_config?.time },
                     audio: { ...DEFAULT_THEME.audio, ...userData.theme_config?.audio },
                     cursor: { ...DEFAULT_THEME.cursor, ...userData.theme_config?.cursor }
                 };
@@ -117,7 +119,7 @@ const PublicProfile = () => {
                      if (mergedTheme.audio.settings.shuffle) {
                          setCurrentTrackIndex(Math.floor(Math.random() * mergedTheme.audio.files.length));
                      } else if (mergedTheme.audio.activeFileId) {
-                         const idx = mergedTheme.audio.files.findIndex((f: any) => f.id === mergedTheme.audio.activeFileId);
+                         const idx = mergedTheme.audio.files.findIndex((f: AudioItem) => f.id === mergedTheme.audio.activeFileId);
                          if (idx !== -1) setCurrentTrackIndex(idx);
                      }
                 }
