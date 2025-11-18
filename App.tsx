@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Switch, Route, Redirect } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import DashboardLayout from './components/DashboardLayout';
 import LandingPage from './components/LandingPage';
 import { AuthProvider } from './context/AuthContext';
@@ -8,18 +8,16 @@ const App: React.FC = () => {
   return (
     <AuthProvider>
         <Router>
-            <Switch>
+            <Routes>
                 {/* Public Landing Page */}
-                <Route exact path="/" component={LandingPage} />
+                <Route path="/" element={<LandingPage />} />
                 
                 {/* Protected Dashboard Routes */}
-                <Route path="/dashboard" component={DashboardLayout} />
+                <Route path="/dashboard/*" element={<DashboardLayout />} />
 
                 {/* Fallback */}
-                <Route path="*">
-                    <Redirect to="/" />
-                </Route>
-            </Switch>
+                <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
         </Router>
     </AuthProvider>
   );

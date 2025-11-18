@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { withRouter, RouteComponentProps } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   Bot, 
@@ -14,7 +14,7 @@ import {
   CloudUpload, 
   User,
   ChevronRight,
-  Ghost,
+  Box,
   ExternalLink,
   LayoutGrid,
   HelpCircle,
@@ -80,9 +80,9 @@ const MENU_ITEMS: MenuItem[] = [
   }
 ];
 
-interface SidebarProps extends RouteComponentProps {}
-
-const Sidebar = ({ location, history }: SidebarProps) => {
+const Sidebar = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
   const { signOut, user } = useAuth();
   
   const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({
@@ -94,7 +94,7 @@ const Sidebar = ({ location, history }: SidebarProps) => {
   };
 
   const handleNavigation = (path?: string) => {
-    if (path) history.push(path);
+    if (path) navigate(path);
   };
 
   const isActive = (path?: string) => {
@@ -103,14 +103,14 @@ const Sidebar = ({ location, history }: SidebarProps) => {
   };
 
   return (
-    <div className="w-72 h-screen bg-[#0a0a0a] border-r border-haunt-border flex flex-col fixed left-0 top-0 z-50 select-none">
+    <div className="w-72 h-screen bg-[#0a0a0a] border-r border-wryft-border flex flex-col fixed left-0 top-0 z-50 select-none">
       {/* Logo Section */}
-      <div className="h-20 flex items-center px-6 gap-3 cursor-pointer" onClick={() => history.push('/')}>
+      <div className="h-20 flex items-center px-6 gap-3 cursor-pointer" onClick={() => navigate('/')}>
         <div className="relative">
-            <Ghost className="w-7 h-7 text-pink-500 fill-pink-500/20 drop-shadow-[0_0_8px_rgba(236,72,153,0.5)]" />
+            <Box className="w-7 h-7 text-violet-500 fill-violet-500/20 drop-shadow-[0_0_8px_rgba(139,92,246,0.5)]" />
         </div>
         <span className="text-2xl font-bold text-white tracking-tight drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]">
-          haunt<span className="text-gray-400">.gg</span>
+          Wryft
         </span>
       </div>
 
@@ -133,12 +133,12 @@ const Sidebar = ({ location, history }: SidebarProps) => {
                 className={`
                   group flex items-center justify-between px-4 py-3 rounded-xl cursor-pointer transition-all duration-200
                   ${(isItemActive || isChildActive) 
-                    ? 'bg-pink-500/10 border border-pink-500/20 text-pink-500 shadow-[0_0_15px_rgba(236,72,153,0.1)]' 
+                    ? 'bg-violet-500/10 border border-violet-500/20 text-violet-500 shadow-[0_0_15px_rgba(139,92,246,0.1)]' 
                     : 'text-gray-400 hover:bg-white/5 hover:text-gray-200 border border-transparent'}
                 `}
               >
                 <div className="flex items-center gap-3">
-                  <item.icon size={18} strokeWidth={2} className={`${(isItemActive || isChildActive) ? 'text-pink-500' : 'text-gray-500 group-hover:text-gray-300'}`} />
+                  <item.icon size={18} strokeWidth={2} className={`${(isItemActive || isChildActive) ? 'text-violet-500' : 'text-gray-500 group-hover:text-gray-300'}`} />
                   <span className="text-sm font-medium">{item.label}</span>
                 </div>
                 {hasSubItems && (
@@ -166,7 +166,7 @@ const Sidebar = ({ location, history }: SidebarProps) => {
                       }}
                       className={`
                         flex items-center gap-3 px-4 py-2.5 rounded-lg cursor-pointer transition-colors
-                        ${isActive(sub.path) ? 'text-pink-400 bg-pink-500/5' : 'text-gray-500 hover:text-gray-200 hover:bg-white/5'}
+                        ${isActive(sub.path) ? 'text-violet-400 bg-violet-500/5' : 'text-gray-500 hover:text-gray-200 hover:bg-white/5'}
                       `}
                     >
                       {sub.icon && <sub.icon size={16} />}
@@ -181,16 +181,16 @@ const Sidebar = ({ location, history }: SidebarProps) => {
       </div>
 
       {/* Bottom Actions */}
-      <div className="p-4 border-t border-haunt-border bg-[#0a0a0a]">
+      <div className="p-4 border-t border-wryft-border bg-[#0a0a0a]">
         <div className="grid grid-cols-4 gap-2 mb-4">
             {[ExternalLink, LayoutGrid, HelpCircle, Users].map((Icon, i) => (
                 <button 
                     key={i}
                     className={`
-                        h-10 w-full flex items-center justify-center rounded-lg border border-haunt-border bg-[#111] hover:bg-white/5 hover:border-gray-700 text-gray-400 transition-all
+                        h-10 w-full flex items-center justify-center rounded-lg border border-wryft-border bg-[#111] hover:bg-white/5 hover:border-gray-700 text-gray-400 transition-all
                         ${i === 2 ? 'text-green-400' : ''}
-                        ${i === 0 ? 'text-pink-400' : ''}
-                        ${i === 3 ? 'text-pink-500' : ''}
+                        ${i === 0 ? 'text-violet-400' : ''}
+                        ${i === 3 ? 'text-violet-500' : ''}
                     `}
                 >
                     <Icon size={16} />
@@ -199,13 +199,13 @@ const Sidebar = ({ location, history }: SidebarProps) => {
         </div>
         
         {/* User Profile */}
-        <div className="flex items-center justify-between bg-[#111] border border-haunt-border p-3 rounded-xl group hover:border-gray-700 transition-colors">
+        <div className="flex items-center justify-between bg-[#111] border border-wryft-border p-3 rounded-xl group hover:border-gray-700 transition-colors">
             <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-full bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center border border-gray-700 text-gray-400 font-medium text-sm overflow-hidden">
                     {user?.user_metadata?.avatar_url ? (
                         <img src={user.user_metadata.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
                     ) : (
-                        <span>{user?.user_metadata?.username?.[0]?.toUpperCase() || 'H'}</span>
+                        <span>{user?.user_metadata?.username?.[0]?.toUpperCase() || 'W'}</span>
                     )}
                 </div>
                 <div className="flex flex-col">
@@ -216,7 +216,7 @@ const Sidebar = ({ location, history }: SidebarProps) => {
             <button 
                 onClick={() => {
                     signOut();
-                    history.push('/');
+                    navigate('/');
                 }}
                 className="text-red-500/50 group-hover:text-red-500 hover:bg-red-500/10 p-1.5 rounded-md transition-all cursor-pointer"
             >
@@ -228,4 +228,4 @@ const Sidebar = ({ location, history }: SidebarProps) => {
   );
 };
 
-export default withRouter(Sidebar);
+export default Sidebar;

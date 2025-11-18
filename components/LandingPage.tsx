@@ -1,15 +1,14 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Link, withRouter, RouteComponentProps } from 'react-router-dom';
-import { Eye, Users, ArrowRight, Loader2, Ghost } from 'lucide-react';
+import { motion, Variants } from 'framer-motion';
+import { Link, useNavigate } from 'react-router-dom';
+import { Eye, Users, ArrowRight, Loader2, Box } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
-interface LandingPageProps extends RouteComponentProps {}
-
-const LandingPage = ({ history }: LandingPageProps) => {
+const LandingPage = () => {
   const [username, setUsername] = useState('');
   const [isChecking, setIsChecking] = useState(false);
   const { signIn, user } = useAuth();
+  const navigate = useNavigate();
 
   const handleClaim = async () => {
     if (!username) return;
@@ -21,11 +20,11 @@ const LandingPage = ({ history }: LandingPageProps) => {
         // In a real app, we'd check availability then redirect to signup
         // For this demo, we'll simulate a "login" and go to dashboard
         await signIn(`${username}@example.com`);
-        history.push('/dashboard/overview');
+        navigate('/dashboard/overview');
     }, 1500);
   };
 
-  const containerVariants = {
+  const containerVariants: Variants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
@@ -35,7 +34,7 @@ const LandingPage = ({ history }: LandingPageProps) => {
     }
   };
 
-  const itemVariants = {
+  const itemVariants: Variants = {
     hidden: { opacity: 0, y: 30 },
     visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } }
   };
@@ -54,7 +53,7 @@ const LandingPage = ({ history }: LandingPageProps) => {
         >
             <div className="flex items-center gap-2">
                  <div className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center border border-white/10">
-                    <Ghost size={18} className="text-white" />
+                    <Box size={18} className="text-white" />
                  </div>
                  <span className="text-xl font-bold tracking-tight">Wryft<span className="text-purple-500">.xyz</span></span>
             </div>
@@ -152,4 +151,4 @@ const LandingPage = ({ history }: LandingPageProps) => {
   );
 };
 
-export default withRouter(LandingPage);
+export default LandingPage;

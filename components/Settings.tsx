@@ -25,15 +25,15 @@ const Settings = () => {
         <div className="text-white p-8 w-full max-w-4xl">
             <div className="flex justify-between items-center mb-8">
                 <div className="flex items-center gap-2 text-sm font-medium">
-                    <span className="text-pink-500">Dashboard</span>
+                    <span className="text-violet-500">Dashboard</span>
                     <span className="text-gray-600">/</span>
                     <span className="text-gray-200">Account Settings</span>
                 </div>
             </div>
 
-            <div className="bg-[#0a0a0a] border border-haunt-border rounded-xl p-8">
+            <div className="bg-[#0a0a0a] border border-wryft-border rounded-xl p-8">
                 <h2 className="text-2xl font-bold mb-6 flex items-center gap-3">
-                    <User className="text-pink-500" />
+                    <User className="text-violet-500" />
                     Profile Information
                 </h2>
 
@@ -41,7 +41,7 @@ const Settings = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
                             <label className="text-sm text-gray-400 font-medium">Username</label>
-                            <div className="flex items-center bg-[#111] border border-haunt-border rounded-lg px-4 py-3 focus-within:border-pink-500/50 transition-colors">
+                            <div className="flex items-center bg-[#111] border border-wryft-border rounded-lg px-4 py-3 focus-within:border-violet-500/50 transition-colors">
                                 <User size={18} className="text-gray-500 mr-3" />
                                 <input 
                                     type="text" 
@@ -55,7 +55,7 @@ const Settings = () => {
 
                         <div className="space-y-2">
                             <label className="text-sm text-gray-400 font-medium">Email Address</label>
-                            <div className="flex items-center bg-[#111] border border-haunt-border rounded-lg px-4 py-3 opacity-70 cursor-not-allowed">
+                            <div className="flex items-center bg-[#111] border border-wryft-border rounded-lg px-4 py-3 opacity-70 cursor-not-allowed">
                                 <Mail size={18} className="text-gray-500 mr-3" />
                                 <input 
                                     type="email" 
@@ -73,7 +73,7 @@ const Settings = () => {
                         <textarea 
                             value={formData.bio}
                             onChange={(e) => setFormData({...formData, bio: e.target.value})}
-                            className="w-full bg-[#111] border border-haunt-border rounded-lg px-4 py-3 outline-none focus:border-pink-500/50 text-white min-h-[120px] resize-none"
+                            className="w-full bg-[#111] border border-wryft-border rounded-lg px-4 py-3 outline-none focus:border-violet-500/50 text-white min-h-[120px] resize-none"
                             placeholder="Tell us about yourself..."
                         />
                     </div>
@@ -81,7 +81,7 @@ const Settings = () => {
                     <div className="pt-4 flex justify-end">
                         <button 
                             onClick={handleSave}
-                            className="flex items-center gap-2 bg-pink-500 hover:bg-pink-600 text-white px-6 py-3 rounded-lg font-medium transition-all shadow-[0_0_15px_rgba(236,72,153,0.3)] active:scale-95"
+                            className="flex items-center gap-2 bg-violet-500 hover:bg-violet-600 text-white px-6 py-3 rounded-lg font-medium transition-all shadow-[0_0_15px_rgba(139,92,246,0.3)] active:scale-95"
                         >
                             {isLoading ? 'Saving...' : (
                                 <>
@@ -94,7 +94,7 @@ const Settings = () => {
                 </div>
             </div>
 
-            <div className="bg-[#0a0a0a] border border-haunt-border rounded-xl p-8 mt-6 opacity-70">
+            <div className="bg-[#0a0a0a] border border-wryft-border rounded-xl p-8 mt-6 opacity-70">
                 <h2 className="text-xl font-bold mb-4 flex items-center gap-3 text-gray-400">
                     <Shield className="text-gray-500" />
                     Security

@@ -23,8 +23,8 @@ const ChartSection = () => {
             <AreaChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <defs>
                     <linearGradient id="colorViews" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#ec4899" stopOpacity={0.1}/>
-                        <stop offset="95%" stopColor="#ec4899" stopOpacity={0}/>
+                        <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.1}/>
+                        <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0}/>
                     </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#262626" />
@@ -46,12 +46,12 @@ const ChartSection = () => {
                 />
                 <Tooltip 
                     contentStyle={{ backgroundColor: '#111', borderColor: '#333', borderRadius: '8px', color: '#fff' }}
-                    itemStyle={{ color: '#ec4899' }}
+                    itemStyle={{ color: '#8b5cf6' }}
                 />
                 <Area 
                     type="monotone" 
                     dataKey="views" 
-                    stroke="#ec4899" 
+                    stroke="#8b5cf6" 
                     strokeWidth={2} 
                     fillOpacity={1} 
                     fill="url(#colorViews)" 
@@ -59,7 +59,7 @@ const ChartSection = () => {
             </AreaChart>
         </ResponsiveContainer>
         {/* Empty state indicator visually similar to chart base line */}
-        <div className="absolute bottom-8 left-0 right-0 h-[1px] bg-pink-900/30"></div>
+        <div className="absolute bottom-8 left-0 right-0 h-[1px] bg-violet-900/30"></div>
     </div>
   );
 };
