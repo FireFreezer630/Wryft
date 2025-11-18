@@ -81,6 +81,34 @@
         );
         background-size: 100% 4px;
       }
+
+      /* Effect Animations */
+      .snow {
+        position: absolute;
+        top: -10px;
+        width: 4px;
+        height: 4px;
+        background: white;
+        border-radius: 50%;
+        opacity: 0.8;
+        animation: fall linear infinite;
+        animation-duration: 3s;
+      }
+
+      .rain {
+        position: absolute;
+        top: -20px;
+        width: 1px;
+        height: 15px;
+        background: rgba(139, 92, 246, 0.5);
+        opacity: 0.6;
+        animation: fall linear infinite;
+        animation-duration: 1s;
+      }
+
+      @keyframes fall {
+        to { transform: translateY(600px); }
+      }
     </style>
 <script type="importmap">
 {

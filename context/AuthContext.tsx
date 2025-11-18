@@ -40,9 +40,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signIn = async (email: string, username?: string) => {
     try {
-        // We pass the username in options so it's saved to metadata on signup
+        // Determine the redirect URL
+        let redirectUrl = window.location.origin + '/dashboard/overview';
+        
+        // If hosted on Netlify, explicitly set the domain to ensure magic links work
+        if (window.location.hostname.includes('netlify.app')) {
+            redirectUrl = `https://${window.location.hostname}/dashboard/overview`;
+        }
+
         const options: any = {
-            emailRedirectTo: window.location.origin + '/dashboard/overview',
+            emailRedirectTo: redirectUrl,
         };
 
         if (username) {

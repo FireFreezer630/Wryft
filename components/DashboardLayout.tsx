@@ -6,6 +6,10 @@ import { useAuth } from '../context/AuthContext';
 import Dashboard from './Dashboard';
 import Settings from './Settings';
 import Customization from './Customization';
+import ImageHost from './ImageHost';
+import ContentManager from './ContentManager';
+import Socials from './Socials';
+import Decoration from './Decoration';
 
 // Placeholder for empty dashboard pages
 const PlaceholderPage = ({ title }: { title: string }) => (
@@ -33,15 +37,17 @@ const DashboardLayout = () => {
              <Route path="settings" element={<Settings />} />
              <Route path="customize" element={<Customization />} />
              
-             {/* Placeholders for other menu items */}
+             {/* Functional Components */}
+             <Route path="uploads" element={<ImageHost />} />
+             <Route path="content" element={<ContentManager />} />
+             <Route path="socials" element={<Socials />} />
+             <Route path="decoration" element={<Decoration />} />
+
+             {/* Placeholders for remaining menu items */}
              <Route path="ai" element={<PlaceholderPage title="AI Assistant" />} />
              <Route path="layout" element={<PlaceholderPage title="Layout Editor" />} />
-             <Route path="decoration" element={<PlaceholderPage title="Decorations" />} />
              <Route path="premium" element={<PlaceholderPage title="Premium Features" />} />
-             <Route path="socials" element={<PlaceholderPage title="Social Links" />} />
-             <Route path="content" element={<PlaceholderPage title="Content Manager" />} />
              <Route path="apps" element={<PlaceholderPage title="Applications" />} />
-             <Route path="uploads" element={<PlaceholderPage title="Image Host" />} />
         </Routes>
       </main>
     </div>

@@ -31,7 +31,22 @@ export interface ThemeConfig {
   backgroundColor: string;
   cardStyle: 'rounded-xl' | 'rounded-none' | 'rounded-3xl' | 'border-only';
   cardOpacity: number;
-  backgroundEffect: 'none' | 'dots' | 'scanlines' | 'vignette';
+  backgroundEffect: 'none' | 'dots' | 'scanlines' | 'vignette' | 'snow' | 'rain';
+}
+
+export interface ContentItem {
+  id: string;
+  title: string;
+  url: string;
+  isVisible: boolean;
+  type: 'link' | 'header';
+  icon?: string;
+}
+
+export interface SocialLink {
+  platform: string;
+  url: string;
+  isActive: boolean;
 }
 
 export interface UserProfile {
@@ -43,5 +58,6 @@ export interface UserProfile {
   background_url?: string;
   cursor_url?: string;
   theme_config: ThemeConfig;
-  social_links?: any[];
+  social_links?: SocialLink[];
+  content?: ContentItem[];
 }
