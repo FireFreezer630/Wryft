@@ -21,12 +21,16 @@ import {
     AlertTriangle,
     ToggleLeft,
     ToggleRight,
-    Calendar
+    Calendar,
+    AlertCircle,
+    X
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import { ThemeConfig, UserProfile } from '../types';
 import ImageEditor from './ImageEditor';
+import AudioManager from './AudioManager';
+import CursorManager from './CursorManager';
 
 const DEFAULT_THEME: ThemeConfig = {
     layout: 'standard',
@@ -53,6 +57,22 @@ const DEFAULT_THEME: ThemeConfig = {
         format: '12h',
         displayMode: 'absolute',
         schema: 'MMM DD, YYYY, HH:mm A'
+    },
+    audio: {
+        enabled: false,
+        files: [],
+        settings: {
+            shuffle: false,
+            player: true,
+            volume: true,
+            sticky: false
+        }
+    },
+    cursor: {
+        enabled: false,
+        custom: false,
+        size: 1,
+        files: []
     }
 };
 
@@ -223,6 +243,7 @@ const AssetCard = ({ icon: Icon, label, subLabel, onClick, image }: { icon: any,
 const Customization = () => {
     const { user, loading: authLoading } = useAuth();
     const [profile, setProfile] = useState<UserProfile | null>(null);
+    const [originalProfile, setOriginalProfile] = useState<UserProfile | null>(null);
     const [saving, setSaving] = useState(false);
     const [loading, setLoading] = useState(true);
     
@@ -230,6 +251,10 @@ const Customization = () => {
     const [editorOpen, setEditorOpen] = useState(false);
     const [imageToEdit, setImageToEdit] = useState<string | null>(null);
     const [editingField, setEditingField] = useState<'avatar_url' | 'background_url' | null>(null);
+
+    // New Managers State
+    const [audioManagerOpen, setAudioManagerOpen] = useState(false);
+    const [cursorManagerOpen, setCursorManagerOpen] = useState(false);
     
     const avatarInput = useRef<HTMLInputElement>(null);
     const bgInput = useRef<HTMLInputElement>(null);
@@ -250,16 +275,22 @@ const Customization = () => {
                     ...DEFAULT_THEME,
                     ...data.theme_config,
                     colors: { ...DEFAULT_THEME.colors, ...data.theme_config?.colors },
-                    time: { ...DEFAULT_THEME.time, ...data.theme_config?.time }
+                    time: { ...DEFAULT_THEME.time, ...data.theme_config?.time },
+                    audio: { ...DEFAULT_THEME.audio, ...data.theme_config?.audio },
+                    cursor: { ...DEFAULT_THEME.cursor, ...data.theme_config?.cursor }
                 };
-                setProfile({ ...data, theme_config: mergedTheme });
+                const profileData = { ...data, theme_config: mergedTheme };
+                setProfile(profileData);
+                setOriginalProfile(JSON.parse(JSON.stringify(profileData))); // Deep clone for comparison
             } else {
                 // Initialize if no profile found
-                setProfile({
+                const initialProfile = {
                     id: user.id,
                     username: user.user_metadata?.username || 'user',
                     theme_config: DEFAULT_THEME
-                });
+                };
+                setProfile(initialProfile);
+                setOriginalProfile(initialProfile);
             }
             setLoading(false);
         };
@@ -317,7 +348,17 @@ const Customization = () => {
             if (!error) {
                 const { data } = supabase.storage.from('user-content').getPublicUrl(fileName);
                 // Add timestamp to bust cache
-                updateProfile(editingField, `${data.publicUrl}?t=${Date.now()}`);
+                const newUrl = `${data.publicUrl}?t=${Date.now()}`;
+                
+                // Update both profile and original profile since this is an instant save operation
+                // We don't want the "Unsaved Changes" pill to pop up just for an image upload that's already saved
+                updateProfile(editingField, newUrl);
+                setOriginalProfile(prev => prev ? { ...prev, [editingField]: newUrl } : null);
+                
+                // Also update DB immediately for uploads
+                 await supabase.from('profiles').update({ [editingField]: newUrl }).eq('id', user.id);
+                 await supabase.auth.updateUser({ data: { [editingField]: newUrl } });
+
             } else {
                 console.error('Upload error:', error);
             }
@@ -361,6 +402,9 @@ const Customization = () => {
                 }
             });
 
+            // Update original profile to match current saved state
+            setOriginalProfile(JSON.parse(JSON.stringify(profile)));
+
         } catch (error) {
             console.error("Failed to save:", error);
             alert('Failed to save changes. Please try again.');
@@ -369,8 +413,22 @@ const Customization = () => {
         }
     };
 
+    const handleReset = () => {
+        if (originalProfile) {
+            setProfile(JSON.parse(JSON.stringify(originalProfile)));
+        }
+    };
+
+    // Check if there are unsaved changes
+    const hasChanges = () => {
+        if (!profile || !originalProfile) return false;
+        return JSON.stringify(profile) !== JSON.stringify(originalProfile);
+    };
+
     if (authLoading || loading) return <div className="flex justify-center p-20"><Loader2 className="animate-spin text-violet-500" size={32} /></div>;
     if (!profile) return null;
+
+    const changesDetected = hasChanges();
 
     return (
         <div className="p-8 w-full max-w-7xl mx-auto pb-32">
@@ -385,6 +443,24 @@ const Customization = () => {
                         setEditingField(null);
                     }}
                     onCropComplete={handleCropComplete}
+                />
+            )}
+
+            {/* Audio Manager Modal */}
+            {audioManagerOpen && (
+                <AudioManager 
+                    config={profile.theme_config.audio}
+                    onUpdate={(newConfig) => updateTheme('audio', newConfig)}
+                    onClose={() => setAudioManagerOpen(false)}
+                />
+            )}
+
+            {/* Cursor Manager Modal */}
+            {cursorManagerOpen && (
+                <CursorManager
+                    config={profile.theme_config.cursor}
+                    onUpdate={(newConfig) => updateTheme('cursor', newConfig)}
+                    onClose={() => setCursorManagerOpen(false)}
                 />
             )}
 
@@ -421,13 +497,13 @@ const Customization = () => {
                     icon={Music} 
                     label="Audio" 
                     subLabel="Click to open audio manager" 
-                    onClick={() => alert('Audio manager')}
+                    onClick={() => setAudioManagerOpen(true)}
                 />
                 <AssetCard 
                     icon={MousePointer2} 
                     label="Cursor" 
                     subLabel="Click to open cursor manager" 
-                    onClick={() => alert('Cursor manager')}
+                    onClick={() => setCursorManagerOpen(true)}
                 />
             </div>
 
@@ -711,16 +787,42 @@ const Customization = () => {
                  </div>
             </div>
 
-            {/* Sticky Save Button */}
-            <div className="fixed bottom-8 right-8 z-50">
-                <button 
-                    onClick={handleSave}
-                    disabled={saving}
-                    className="bg-white hover:bg-gray-200 text-black px-8 py-3.5 rounded-full font-bold shadow-[0_0_30px_rgba(255,255,255,0.15)] flex items-center gap-3 transition-all active:scale-95"
-                >
-                    {saving ? <Loader2 className="animate-spin" size={20} /> : <Save size={20} />}
-                    Save Changes
-                </button>
+            {/* Floating Save Pill - Premium Glass Look */}
+            <div className={`
+                fixed bottom-10 left-1/2 transform -translate-x-1/2 z-[60] 
+                transition-all duration-500 cubic-bezier(0.34, 1.56, 0.64, 1)
+                ${changesDetected ? 'translate-y-0 opacity-100 scale-100' : 'translate-y-32 opacity-0 scale-90'}
+            `}>
+                <div className="
+                    backdrop-blur-xl bg-black/80 border border-white/10 rounded-full p-1.5 pl-5 pr-2 
+                    shadow-[0_10px_40px_rgba(0,0,0,0.5)] flex items-center gap-6
+                ">
+                    <div className="flex items-center gap-2.5">
+                         <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse shadow-[0_0_10px_rgba(245,158,11,0.5)]"></div>
+                         <span className="text-sm font-semibold text-white tracking-wide">Unsaved Changes</span>
+                    </div>
+                    
+                    <div className="flex items-center gap-1">
+                        <button 
+                            onClick={handleReset}
+                            className="px-4 py-2 rounded-full text-xs font-bold text-gray-400 hover:text-white hover:bg-white/5 transition-all uppercase tracking-wider"
+                        >
+                            Discard
+                        </button>
+                        <button 
+                            onClick={handleSave}
+                            disabled={saving}
+                            className="
+                                bg-white hover:bg-gray-200 text-black px-6 py-2.5 rounded-full text-xs font-bold 
+                                flex items-center gap-2 transition-all active:scale-95 disabled:opacity-70
+                                shadow-[0_0_20px_rgba(255,255,255,0.15)] uppercase tracking-wider
+                            "
+                        >
+                            {saving ? <Loader2 className="animate-spin" size={14} /> : null}
+                            Save
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     );

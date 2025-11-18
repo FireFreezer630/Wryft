@@ -24,6 +24,39 @@ export interface StatCardProps {
   variant?: 'default' | 'pink';
 }
 
+export interface AudioItem {
+    id: string;
+    name: string;
+    url: string;
+    duration?: number;
+}
+
+export interface AudioConfig {
+    enabled: boolean;
+    files: AudioItem[];
+    activeFileId?: string;
+    settings: {
+        shuffle: boolean;
+        player: boolean;
+        volume: boolean;
+        sticky: boolean;
+    };
+}
+
+export interface CursorItem {
+    id: string;
+    name: string;
+    url: string;
+}
+
+export interface CursorConfig {
+    enabled: boolean;
+    custom: boolean;
+    size: number; // Scale factor (1 = 100%)
+    files: CursorItem[];
+    activeCursorId?: string;
+}
+
 export interface ThemeConfig {
   layout: 'standard' | 'expanded' | 'minimal';
   font: 'Inter' | 'Roboto' | 'Playfair Display' | 'Courier Prime';
@@ -58,6 +91,10 @@ export interface ThemeConfig {
     displayMode: 'absolute' | 'relative';
     schema: string;
   };
+
+  // Media Managers
+  audio: AudioConfig;
+  cursor: CursorConfig;
 }
 
 export interface ContentItem {

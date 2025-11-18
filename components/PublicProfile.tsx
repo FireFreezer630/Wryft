@@ -30,6 +30,22 @@ const DEFAULT_THEME: ThemeConfig = {
         format: '12h',
         displayMode: 'absolute',
         schema: 'MMM DD, YYYY, HH:mm A'
+    },
+    audio: {
+        enabled: false,
+        files: [],
+        settings: {
+            shuffle: false,
+            player: true,
+            volume: true,
+            sticky: false
+        }
+    },
+    cursor: {
+        enabled: false,
+        custom: false,
+        size: 1,
+        files: []
     }
 };
 
@@ -76,14 +92,22 @@ const PublicProfile = () => {
                 }
 
                 const userData = profiles[0];
+                
+                // Deep merge default theme with loaded theme to prevent crashes on missing new fields
+                const mergedTheme = {
+                    ...DEFAULT_THEME,
+                    ...userData.theme_config,
+                    audio: { ...DEFAULT_THEME.audio, ...userData.theme_config?.audio },
+                    cursor: { ...DEFAULT_THEME.cursor, ...userData.theme_config?.cursor }
+                };
+
                 setProfile({
                     ...userData,
-                    theme_config: { ...DEFAULT_THEME, ...userData.theme_config }
+                    theme_config: mergedTheme
                 });
                 setLoading(false);
 
                 // 2. Increment View Count (Fire & Forget)
-                // Ignoring errors here to not block render
                 supabase.rpc('increment_view_count', { user_id: userData.id }).then(({ error }) => {
                     if (error) console.warn('Failed to increment views:', error);
                 });
@@ -120,6 +144,9 @@ const PublicProfile = () => {
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         fontFamily: theme_config.font,
+        cursor: (theme_config.cursor.enabled && theme_config.cursor.activeCursorId) 
+            ? `url(${theme_config.cursor.files.find(f => f.id === theme_config.cursor.activeCursorId)?.url}), auto` 
+            : 'auto'
     };
 
     // Convert opacity (0-100) to hex alpha

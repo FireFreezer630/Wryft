@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import { useAuth } from '../context/AuthContext';
@@ -10,6 +10,7 @@ import ImageHost from './ImageHost';
 import ContentManager from './ContentManager';
 import Socials from './Socials';
 import Decoration from './Decoration';
+import Loader from './Loader';
 
 // Placeholder for empty dashboard pages
 const PlaceholderPage = ({ title }: { title: string }) => (
@@ -23,6 +24,17 @@ const PlaceholderPage = ({ title }: { title: string }) => (
 
 const DashboardLayout = () => {
   const { user } = useAuth();
+  const [isAppLoading, setIsAppLoading] = useState(true);
+
+  useEffect(() => {
+      // Simulate intro animation
+      const timer = setTimeout(() => {
+          setIsAppLoading(false);
+      }, 2000);
+      return () => clearTimeout(timer);
+  }, []);
+
+  if (isAppLoading) return <Loader />;
 
   // In a real app, redirect if not authenticated
   // if (!user) return <Navigate to="/" replace />;
