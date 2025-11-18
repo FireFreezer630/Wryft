@@ -3,32 +3,23 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Save, User, Mail, Shield, Loader2, Check, Camera, Image as ImageIcon, MousePointer2, UploadCloud, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
+import ImageEditor from './ImageEditor';
 
 interface UploadZoneProps {
     label: string;
     type: 'avatar' | 'background' | 'cursor';
     currentUrl?: string;
-    onUpload: (file: File) => Promise<void>;
+    onUploadTrigger: () => void;
     isUploading: boolean;
 }
 
-const UploadZone: React.FC<UploadZoneProps> = ({ label, type, currentUrl, onUpload, isUploading }) => {
-    const fileInputRef = useRef<HTMLInputElement>(null);
-
-    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files[0]) {
-            await onUpload(e.target.files[0]);
-        }
-    };
-
-    const triggerUpload = () => fileInputRef.current?.click();
-
+const UploadZone: React.FC<UploadZoneProps> = ({ label, type, currentUrl, onUploadTrigger, isUploading }) => {
     // Render logic based on type
     if (type === 'avatar') {
         return (
             <div className="flex items-center gap-6">
                 <div 
-                    onClick={triggerUpload}
+                    onClick={onUploadTrigger}
                     className="relative group cursor-pointer w-24 h-24 rounded-full bg-[#111] border-2 border-dashed border-wryft-border hover:border-violet-500 overflow-hidden flex items-center justify-center transition-all"
                 >
                     {currentUrl ? (
@@ -44,7 +35,7 @@ const UploadZone: React.FC<UploadZoneProps> = ({ label, type, currentUrl, onUplo
                 <div className="flex flex-col gap-2">
                     <label className="text-sm text-gray-400 font-medium">{label}</label>
                     <button 
-                        onClick={triggerUpload}
+                        onClick={onUploadTrigger}
                         disabled={isUploading}
                         className="px-4 py-2 bg-[#111] border border-wryft-border hover:bg-[#1a1a1a] text-xs font-medium text-gray-300 rounded-lg transition-colors"
                     >
@@ -52,7 +43,6 @@ const UploadZone: React.FC<UploadZoneProps> = ({ label, type, currentUrl, onUplo
                     </button>
                     <p className="text-xs text-gray-600">Recommended: 400x400px (PNG, JPG, GIF)</p>
                 </div>
-                <input ref={fileInputRef} type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
             </div>
         );
     }
@@ -63,13 +53,13 @@ const UploadZone: React.FC<UploadZoneProps> = ({ label, type, currentUrl, onUplo
                 <div className="flex justify-between items-center">
                     <label className="text-sm text-gray-400 font-medium">{label}</label>
                     {currentUrl && (
-                        <button onClick={triggerUpload} className="text-xs text-violet-500 hover:text-violet-400">
+                        <button onClick={onUploadTrigger} className="text-xs text-violet-500 hover:text-violet-400">
                             Change Image
                         </button>
                     )}
                 </div>
                 <div 
-                    onClick={triggerUpload}
+                    onClick={onUploadTrigger}
                     className="relative group cursor-pointer w-full h-40 rounded-xl bg-[#111] border-2 border-dashed border-wryft-border hover:border-violet-500 overflow-hidden flex flex-col items-center justify-center transition-all"
                 >
                     {currentUrl ? (
@@ -89,7 +79,6 @@ const UploadZone: React.FC<UploadZoneProps> = ({ label, type, currentUrl, onUplo
                          {isUploading ? <Loader2 className="animate-spin text-white" size={24} /> : <UploadCloud className="text-white" size={24} />}
                     </div>
                 </div>
-                 <input ref={fileInputRef} type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
             </div>
         );
     }
@@ -101,7 +90,7 @@ const UploadZone: React.FC<UploadZoneProps> = ({ label, type, currentUrl, onUplo
                     <label className="text-sm text-gray-400 font-medium">{label}</label>
                 </div>
                 <div 
-                    onClick={triggerUpload}
+                    onClick={onUploadTrigger}
                     className="relative group cursor-pointer w-full h-24 rounded-xl bg-[#111] border-2 border-dashed border-wryft-border hover:border-violet-500 overflow-hidden flex items-center justify-center transition-all"
                 >
                     {currentUrl ? (
@@ -117,7 +106,6 @@ const UploadZone: React.FC<UploadZoneProps> = ({ label, type, currentUrl, onUplo
                          {isUploading ? <Loader2 className="animate-spin text-white" size={16} /> : <UploadCloud className="text-white" size={16} />}
                     </div>
                 </div>
-                 <input ref={fileInputRef} type="file" className="hidden" accept="image/*,.cur" onChange={handleFileChange} />
             </div>
         );
     }
@@ -130,6 +118,12 @@ const Settings = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [uploadingField, setUploadingField] = useState<string | null>(null);
     const [success, setSuccess] = useState(false);
+    
+    // Image Editor Logic
+    const [editorOpen, setEditorOpen] = useState(false);
+    const [imageToEdit, setImageToEdit] = useState<string | null>(null);
+    const [editingField, setEditingField] = useState<'avatar_url' | 'background_url' | 'cursor_url' | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
     
     const [formData, setFormData] = useState({
         username: '',
@@ -153,13 +147,54 @@ const Settings = () => {
         }
     }, [user]);
 
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0] && editingField) {
+            // If it's a cursor, we skip cropping (cursors are often specific sizes/types)
+            // Actually, let's allow standard image crop if they upload an image for cursor
+            // But .cur files won't work in canvas editor easily.
+            const file = e.target.files[0];
+
+            if (editingField === 'cursor_url' && !file.type.startsWith('image/')) {
+                // Direct upload for non-image cursor files
+                uploadAsset(file, editingField);
+                setEditingField(null);
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.addEventListener('load', () => {
+                setImageToEdit(reader.result as string);
+                setEditorOpen(true);
+            });
+            reader.readAsDataURL(file);
+        }
+        e.target.value = '';
+    };
+
+    const handleUploadTrigger = (field: 'avatar_url' | 'background_url' | 'cursor_url') => {
+        setEditingField(field);
+        fileInputRef.current?.click();
+    };
+
+    const handleCropComplete = async (croppedBlob: Blob) => {
+         if (!editingField) return;
+         
+         // Convert blob to file for consistent handling if needed, or just upload blob
+         const file = new File([croppedBlob], 'edited-image.jpg', { type: 'image/jpeg' });
+         await uploadAsset(file, editingField);
+         
+         setEditorOpen(false);
+         setImageToEdit(null);
+         setEditingField(null);
+    };
+
     const uploadAsset = async (file: File, field: 'avatar_url' | 'background_url' | 'cursor_url') => {
         if (!user) return;
         
         setUploadingField(field);
         try {
-            const fileExt = file.name.split('.').pop();
-            const fileName = `${user.id}/${field}/${Math.random()}.${fileExt}`;
+            const fileExt = file.name.split('.').pop() || 'jpg';
+            const fileName = `${user.id}/${field}/${Date.now()}.${fileExt}`;
             const bucket = 'user-content'; 
 
             // 1. Upload to Supabase Storage
@@ -175,7 +210,7 @@ const Settings = () => {
                 .getPublicUrl(fileName);
 
             // 3. Update Local State
-            setFormData(prev => ({ ...prev, [field]: publicUrl }));
+            setFormData(prev => ({ ...prev, [field]: `${publicUrl}?t=${Date.now()}` }));
 
         } catch (error: any) {
             console.error('Upload failed:', error);
@@ -214,6 +249,29 @@ const Settings = () => {
 
     return (
         <div className="text-white p-8 w-full max-w-6xl pb-20">
+             {/* Hidden File Input */}
+             <input 
+                type="file" 
+                ref={fileInputRef} 
+                className="hidden" 
+                accept="image/*,.cur" 
+                onChange={handleFileSelect} 
+            />
+
+            {/* Image Editor Modal */}
+            {editorOpen && imageToEdit && editingField && (
+                <ImageEditor 
+                    imageSrc={imageToEdit}
+                    aspectRatio={editingField === 'avatar_url' ? 1 : (editingField === 'background_url' ? 16/9 : 1)}
+                    onCancel={() => {
+                        setEditorOpen(false);
+                        setImageToEdit(null);
+                        setEditingField(null);
+                    }}
+                    onCropComplete={handleCropComplete}
+                />
+            )}
+
             <div className="flex justify-between items-center mb-8">
                 <div className="flex items-center gap-2 text-sm font-medium">
                     <span className="text-violet-500">Dashboard</span>
@@ -238,7 +296,7 @@ const Settings = () => {
                                 label="Profile Picture" 
                                 type="avatar" 
                                 currentUrl={formData.avatar_url}
-                                onUpload={(file) => uploadAsset(file, 'avatar_url')}
+                                onUploadTrigger={() => handleUploadTrigger('avatar_url')}
                                 isUploading={uploadingField === 'avatar_url'}
                             />
 
@@ -295,14 +353,14 @@ const Settings = () => {
                                 label="Profile Background" 
                                 type="background" 
                                 currentUrl={formData.background_url}
-                                onUpload={(file) => uploadAsset(file, 'background_url')}
+                                onUploadTrigger={() => handleUploadTrigger('background_url')}
                                 isUploading={uploadingField === 'background_url'}
                             />
                              <UploadZone 
                                 label="Custom Cursor" 
                                 type="cursor" 
                                 currentUrl={formData.cursor_url}
-                                onUpload={(file) => uploadAsset(file, 'cursor_url')}
+                                onUploadTrigger={() => handleUploadTrigger('cursor_url')}
                                 isUploading={uploadingField === 'cursor_url'}
                             />
                         </div>

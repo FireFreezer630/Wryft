@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useRef } from 'react';
 import { 
     User, 
@@ -11,7 +12,6 @@ import {
     Clock,
     Save,
     Loader2,
-    UploadCloud,
     RotateCcw,
     ChevronDown,
     Download,
@@ -26,6 +26,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import { ThemeConfig, UserProfile } from '../types';
+import ImageEditor from './ImageEditor';
 
 const DEFAULT_THEME: ThemeConfig = {
     layout: 'standard',
@@ -58,8 +59,8 @@ const DEFAULT_THEME: ThemeConfig = {
 // Helper: Header with Glow
 const GlowHeader = ({ icon: Icon, title }: { icon: any, title: string }) => (
     <div className="flex items-center gap-3 mb-8">
-        <Icon className="text-pink-400 drop-shadow-[0_0_8px_rgba(244,114,182,0.8)]" size={28} />
-        <h2 className="text-2xl font-bold text-pink-400 drop-shadow-[0_0_10px_rgba(244,114,182,0.5)] tracking-wide">
+        <Icon className="text-violet-400 drop-shadow-[0_0_8px_rgba(139,92,246,0.8)]" size={28} />
+        <h2 className="text-2xl font-bold text-violet-400 drop-shadow-[0_0_10px_rgba(139,92,246,0.5)] tracking-wide">
             {title}
         </h2>
     </div>
@@ -194,7 +195,7 @@ const RangeControl = ({
                 max={max} 
                 value={value} 
                 onChange={(e) => onChange(Number(e.target.value))}
-                className="w-full h-1.5 bg-[#222] rounded-lg appearance-none cursor-pointer accent-pink-500 hover:accent-pink-400 transition-all"
+                className="w-full h-1.5 bg-[#222] rounded-lg appearance-none cursor-pointer accent-violet-500 hover:accent-violet-400 transition-all"
             />
         </div>
     </ControlGroup>
@@ -203,13 +204,13 @@ const RangeControl = ({
 const AssetCard = ({ icon: Icon, label, subLabel, onClick, image }: { icon: any, label: string, subLabel: string, onClick: () => void, image?: string }) => (
     <div 
         onClick={onClick}
-        className="group relative h-48 bg-[#050505] border border-[#222] rounded-2xl flex flex-col items-center justify-center cursor-pointer overflow-hidden hover:border-pink-500/30 transition-all"
+        className="group relative h-48 bg-[#050505] border border-[#222] rounded-2xl flex flex-col items-center justify-center cursor-pointer overflow-hidden hover:border-violet-500/30 transition-all"
     >
         {image ? (
             <img src={image} alt={label} className="absolute inset-0 w-full h-full object-cover opacity-50 group-hover:opacity-70 transition-opacity" />
         ) : (
             <div className="w-16 h-16 bg-[#111] rounded-full flex items-center justify-center mb-4 z-10 group-hover:scale-110 transition-transform border border-[#222]">
-                <Icon className="text-gray-500 group-hover:text-pink-400" size={28} />
+                <Icon className="text-gray-500 group-hover:text-violet-400" size={28} />
             </div>
         )}
         <div className="relative z-10 flex flex-col items-center">
@@ -220,17 +221,28 @@ const AssetCard = ({ icon: Icon, label, subLabel, onClick, image }: { icon: any,
 );
 
 const Customization = () => {
-    const { user } = useAuth();
+    const { user, loading: authLoading } = useAuth();
     const [profile, setProfile] = useState<UserProfile | null>(null);
     const [saving, setSaving] = useState(false);
     const [loading, setLoading] = useState(true);
+    
+    // Image Editor State
+    const [editorOpen, setEditorOpen] = useState(false);
+    const [imageToEdit, setImageToEdit] = useState<string | null>(null);
+    const [editingField, setEditingField] = useState<'avatar_url' | 'background_url' | null>(null);
     
     const avatarInput = useRef<HTMLInputElement>(null);
     const bgInput = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
+        // Block until auth is decided to prevent premature "Link not found" / 404 states on refresh
+        if (authLoading) return;
+
         const fetchProfile = async () => {
-            if (!user) return;
+            if (!user) {
+                setLoading(false);
+                return;
+            }
             const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single();
             if (data) {
                 // Merge default theme with saved theme to ensure all fields exist
@@ -252,7 +264,7 @@ const Customization = () => {
             setLoading(false);
         };
         fetchProfile();
-    }, [user]);
+    }, [user, authLoading]);
 
     const updateProfile = (key: keyof UserProfile, value: any) => {
         setProfile(prev => prev ? { ...prev, [key]: value } : null);
@@ -277,15 +289,44 @@ const Customization = () => {
         });
     };
 
-    const handleUpload = async (file: File, type: 'avatar_url' | 'background_url') => {
-        if (!user) return;
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${user.id}/${type}/${Date.now()}.${fileExt}`;
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>, type: 'avatar_url' | 'background_url') => {
+        if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
+            const reader = new FileReader();
+            reader.addEventListener('load', () => {
+                setImageToEdit(reader.result as string);
+                setEditingField(type);
+                setEditorOpen(true);
+            });
+            reader.readAsDataURL(file);
+        }
+        // Reset input
+        e.target.value = '';
+    };
+
+    const handleCropComplete = async (croppedBlob: Blob) => {
+        if (!user || !editingField) return;
         
-        const { error } = await supabase.storage.from('user-content').upload(fileName, file);
-        if (!error) {
-            const { data } = supabase.storage.from('user-content').getPublicUrl(fileName);
-            updateProfile(type, data.publicUrl);
+        setEditorOpen(false);
+        setSaving(true); // Show saving state while uploading
+        
+        const fileName = `${user.id}/${editingField}/${Date.now()}.jpg`;
+        
+        try {
+            const { error } = await supabase.storage.from('user-content').upload(fileName, croppedBlob);
+            if (!error) {
+                const { data } = supabase.storage.from('user-content').getPublicUrl(fileName);
+                // Add timestamp to bust cache
+                updateProfile(editingField, `${data.publicUrl}?t=${Date.now()}`);
+            } else {
+                console.error('Upload error:', error);
+            }
+        } catch (err) {
+            console.error('Upload exception:', err);
+        } finally {
+            setSaving(false);
+            setEditingField(null);
+            setImageToEdit(null);
         }
     };
 
@@ -311,16 +352,30 @@ const Customization = () => {
         if (error) alert('Failed to save');
     };
 
-    if (loading) return <div className="flex justify-center p-20"><Loader2 className="animate-spin text-pink-500" size={32} /></div>;
+    if (authLoading || loading) return <div className="flex justify-center p-20"><Loader2 className="animate-spin text-violet-500" size={32} /></div>;
     if (!profile) return null;
 
     return (
         <div className="p-8 w-full max-w-7xl mx-auto pb-32">
+            {/* Image Editor Modal */}
+            {editorOpen && imageToEdit && editingField && (
+                <ImageEditor 
+                    imageSrc={imageToEdit}
+                    aspectRatio={editingField === 'avatar_url' ? 1 : 16/9}
+                    onCancel={() => {
+                        setEditorOpen(false);
+                        setImageToEdit(null);
+                        setEditingField(null);
+                    }}
+                    onCropComplete={handleCropComplete}
+                />
+            )}
+
             {/* Breadcrumbs */}
             <div className="flex items-center gap-2 text-sm font-medium mb-10 pl-1">
-                <span className="text-pink-500">Dashboard</span>
+                <span className="text-violet-500">Dashboard</span>
                 <span className="text-gray-700">/</span>
-                <span className="text-pink-500">Customization</span>
+                <span className="text-violet-500">Customization</span>
                 <span className="text-gray-700">/</span>
                 <span className="text-white">Customize</span>
             </div>
@@ -330,20 +385,20 @@ const Customization = () => {
                 <AssetCard 
                     icon={User} 
                     label="Avatar" 
-                    subLabel="Click or Drop a Avatar" 
+                    subLabel="Click to Edit Avatar" 
                     onClick={() => avatarInput.current?.click()}
                     image={profile.avatar_url}
                 />
-                <input type="file" ref={avatarInput} className="hidden" onChange={(e) => e.target.files?.[0] && handleUpload(e.target.files[0], 'avatar_url')} />
+                <input type="file" ref={avatarInput} className="hidden" accept="image/*" onChange={(e) => handleFileSelect(e, 'avatar_url')} />
                 
                 <AssetCard 
                     icon={ImageIcon} 
                     label="Background" 
-                    subLabel="Click or Drop a Background" 
+                    subLabel="Click to Edit Background" 
                     onClick={() => bgInput.current?.click()}
                     image={profile.background_url}
                 />
-                <input type="file" ref={bgInput} className="hidden" onChange={(e) => e.target.files?.[0] && handleUpload(e.target.files[0], 'background_url')} />
+                <input type="file" ref={bgInput} className="hidden" accept="image/*" onChange={(e) => handleFileSelect(e, 'background_url')} />
 
                 <AssetCard 
                     icon={Music} 
@@ -501,7 +556,7 @@ const Customization = () => {
                                 className={`
                                     w-full border rounded-lg px-4 py-3.5 text-sm font-medium transition-all flex items-center justify-center
                                     ${profile.theme_config.colors.gradientEnabled 
-                                        ? 'bg-pink-500/10 border-pink-500/50 text-pink-400' 
+                                        ? 'bg-violet-500/10 border-violet-500/50 text-violet-400' 
                                         : 'bg-[#1a0505] border-red-900/30 text-red-400 hover:bg-[#2a0a0a]'}
                                 `}
                             >
@@ -529,8 +584,8 @@ const Customization = () => {
             <div className="mb-16">
                 <div className="flex items-center justify-between mb-8">
                      <div className="flex items-center gap-3">
-                        <UserCircle className="text-pink-400 drop-shadow-[0_0_8px_rgba(244,114,182,0.8)]" size={28} />
-                        <h2 className="text-2xl font-bold text-pink-400 drop-shadow-[0_0_10px_rgba(244,114,182,0.5)] tracking-wide">About Me</h2>
+                        <UserCircle className="text-violet-400 drop-shadow-[0_0_8px_rgba(139,92,246,0.8)]" size={28} />
+                        <h2 className="text-2xl font-bold text-violet-400 drop-shadow-[0_0_10px_rgba(139,92,246,0.5)] tracking-wide">About Me</h2>
                     </div>
                     <div className="flex items-center bg-[#111] border border-[#222] rounded-full px-3 py-1.5 gap-2">
                         <button 
@@ -631,7 +686,7 @@ const Customization = () => {
 
                         <ControlGroup label="Preview">
                              <div className="bg-[#050505] border border-[#222] rounded-lg px-4 py-3.5 flex items-center text-sm text-gray-400 font-mono">
-                                <Clock size={14} className="mr-3 text-pink-500" />
+                                <Clock size={14} className="mr-3 text-violet-500" />
                                 {new Date().toLocaleTimeString()}
                             </div>
                         </ControlGroup>
