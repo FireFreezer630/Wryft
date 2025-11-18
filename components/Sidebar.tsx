@@ -11,13 +11,13 @@ import {
   Star, 
   Image as ImageIcon, 
   Grid, 
-  CloudUpload, 
+  UploadCloud, 
   User,
   ChevronRight,
   Box,
   ExternalLink,
   LayoutGrid,
-  HelpCircle,
+  CircleHelp,
   Users,
   Power
 } from 'lucide-react';
@@ -69,7 +69,7 @@ const MENU_ITEMS: MenuItem[] = [
   {
     id: 'image-host',
     label: 'Image Host',
-    icon: CloudUpload,
+    icon: UploadCloud,
     subItems: [{ label: 'Uploads', path: '/dashboard/uploads' }]
   },
   {
@@ -183,7 +183,7 @@ const Sidebar = () => {
       {/* Bottom Actions */}
       <div className="p-4 border-t border-wryft-border bg-[#0a0a0a]">
         <div className="grid grid-cols-4 gap-2 mb-4">
-            {[ExternalLink, LayoutGrid, HelpCircle, Users].map((Icon, i) => (
+            {[ExternalLink, LayoutGrid, CircleHelp, Users].map((Icon, i) => (
                 <button 
                     key={i}
                     className={`
